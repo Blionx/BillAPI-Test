@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repositories\Clientes\ClientesRepository;
+use App\Repositories\Clientes\EloquentClientes;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +25,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+      //
     }
 }

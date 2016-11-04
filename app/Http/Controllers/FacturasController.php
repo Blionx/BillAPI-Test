@@ -4,19 +4,26 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Facturas;
-use App\Clientes;
-use App\Productos;
-use App\Detalle;
+use App\Repositories\Factura\FacturasRepository as Facturas;
+use App\Repositories\Clientes\ClientsRepository as Client;
+use App\Repositories\Productos\ProductRepository as Product;
+use App\Repositories\Detalle\DetalleRepository as Detail;
 
 class FacturasController extends Controller
 {
+    public function __construct(Client $clientes, Product $product, Detail $detail, Facturas $facturas)
+    {
+        $this->clientes= $clientes;
+        $this->productos = $product;
+        $this->detalle = $detail;
+        $this->factura = $facturas;
+    }
    public function index(request $request){
-    $bill = Facturas::get();
+    $bill = $this->factura->all();
     $bills=[];
     foreach ($bill as $billkey) {
         $fac = (object)['cabecera'=>$billkey];
-    $fac->detalle = $billkey->detalle()->get();
+    $fac->detalle = $this->detalle->findspecial('facturas_id',$billkey->id);
     array_push($bills, $fac);
     
     }
@@ -24,27 +31,20 @@ class FacturasController extends Controller
     
    }
    public function creator(request $request){
-        if(Helper::checkbill($request->all())){
-        $newbill = new Facturas;
-        $newbill->clientes_id = $request->input('cabecera.cliente_id');
-        $newbill->fecha = $request->input('cabecera.fecha');
-        $newbill->total = 0;
-        $newbill->save();
-        $total = $newbill->total;
+    $info = $request->all();
+    $total = 0;
+        if(Helper::checkbill($info)){
+            
+        $newbill = $this->factura->create($info['cabecera']);
         foreach ($request->input('detalle') as $detail) {
-            $newdetail = new Detalle;
-            $newdetail->facturas_id = $newbill->id;
-            $newdetail->productos_id = $detail['producto_id'];
-            $newdetail->cantidad = $detail['cantidad'];
-            $newdetail->precio = $detail['precio'];
-            $newdetail->save();
+            $detail['facturas_id']= $newbill->id;
+            unset($detail['denominacion']);
+            $newdetail = $this->detalle->create($detail);
             $subt = $newdetail->cantidad * $newdetail->precio;
             $total = $total+$subt;
             
         }
-        $newbill= Facturas::find($newbill->id);
-        $newbill->total = $total;
-        $newbill->save();
+        $newbill = $this->factura->update(array('total'=>$total),$newbill->id,'id');
 
         return Response()->json($newbill,201);
     }else{

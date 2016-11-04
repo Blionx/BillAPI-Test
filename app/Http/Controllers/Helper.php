@@ -16,7 +16,6 @@ public static function checkrequest($info, $attr){
     return true;
    }
    public static function checkbill($info){
-    
     $cabecera = $info['cabecera'];
     if(!isset($cabecera['cliente_id']) || !isset($cabecera['fecha'])){
         return false;

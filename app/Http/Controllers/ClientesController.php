@@ -4,14 +4,17 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Clientes;
 use App\Productos;
+use App\Repositories\Clientes\ClientsRepository as Client;
 
 class ClientesController extends Controller
 {
+    public function __construct(Client $clientes)
+    {
+        $this->clientes= $clientes;
+    }
    public function index(request $request){
-    $clients = Clientes::get();
-    return Response()->json($clients,200);
+    return Response()->json($this->clientes->all());
    }
    public function indexbills(request $request, $id){
     $billcontainer = Clientes::find($id)->facturas;
@@ -33,44 +36,21 @@ class ClientesController extends Controller
     $info = $request->all();
     $attr = "nombre,direccion,telefono";
     if(Helper::checkrequest($info,$attr)){
-        $newClient = new Clientes;
-        $newClient->nombre = $info['nombre'];
-        $newClient->direccion= $info['direccion'];
-        $newClient->telefono= $info['telefono'];
-        $newClient->save();
+        $newClient=  $this->clientes->create($info);
         return Response()->json($newClient,201);
     }else{
         return Response()->json('bad_request',400);
     }
    }
    public function editor(request $request,$id){
-    $oldClient = Clientes::find($id);
-
-    if(count($oldClient)>0){
-        $info = $request->all();
-        $attr = "nombre,direccion,telefono";
-        
-        if(Helper::checkrequest($info,$attr)){
-            $oldClient->nombre = $info['nombre'];
-            $oldClient->direccion= $info['direccion'];
-            $oldClient->telefono= $info['telefono'];
-            $oldClient->save();
-            return Response()->json($oldClient,200);
-        }else{
-            return Response()->json("bad_request",400);
-        }
-    }else{
-        return Response()->json("Cliente_not_found",404);
-    }
+    $info = $request->all();
+    $oldClient=  $this->clientes->update($info,$id,'id');
+    return Response()->json($oldClient,200);
+   
    }
    public function deletor(request $request , $id){
-    $doomed = Clientes::find($id);
-    if(count($doomed)>0){
-        $doomed->delete();
-        return Response()->json("",200);
-    }else{
-        return Response()->json("Cliente_not_found",404);
-    }
+    $doomed=  $this->clientes->delete($id);
+    return Response()->json($doomed,200);
    }
    
 }
